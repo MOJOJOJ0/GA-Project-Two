@@ -1,15 +1,15 @@
 package com.health.app.gaprojecttwo.controller;
 
 
-
-
-import com.health.app.gaprojecttwo.exception.InformationExistException;
-import com.health.app.gaprojecttwo.exception.InformationNotFoundException;
 import com.health.app.gaprojecttwo.model.Category;
-import com.health.app.gaprojecttwo.repository.CategoryRepository;
+import com.health.app.gaprojecttwo.model.Recipe;
+import com.health.app.gaprojecttwo.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,86 +17,79 @@ import java.util.Optional;
 @RequestMapping(path = "/api")
 public class CategoryController {
 
-    private CategoryRepository categoryRepository;
+    private CategoryService categoryService;
 
     @Autowired
-    public void setCategoryRepository(CategoryRepository categoryRepository) {
-        this.categoryRepository = categoryRepository;
+    public void setCategoryService(CategoryService categoryService) {
+        this.categoryService = categoryService;
     }
 
     @GetMapping("/categories")
     public List<Category> getCategories() {
         System.out.println("calling getCategories ==>");
-        return categoryRepository.findAll();
+        return categoryService.getCategories();
     }
-
-/*
-    @GetMapping(path = "/categories/{categoryId}")
-    public Optional getCategory(@PathVariable Long categoryId) throws Exception {
-        System.out.println("calling getCategory ==>");
-        Optional category = categoryRepository.findById(categoryId);
-        if (category.isPresent()) {
-            return category;
-        } else {
-            throw new Exception("category with id " + categoryId + " not found");
-        }
-    }
-*/
 
     @GetMapping(path = "/categories/{categoryId}")
     public Optional getCategory(@PathVariable Long categoryId) {
         System.out.println("calling getCategory ==>");
-        Optional category = categoryRepository.findById(categoryId);
-        if (category.isPresent()) {
-            return category;
-        } else {
-            throw new InformationNotFoundException("category with id " + categoryId + " not found");
-        }
+        return categoryService.getCategory(categoryId);
     }
-
 
     @PostMapping("/categories/")
     public Category createCategory(@RequestBody Category categoryObject) {
         System.out.println("calling createCategory ==>");
-
-        Category category = categoryRepository.findByName(categoryObject.getName());
-        if (category != null) {
-            throw new InformationExistException("category with name " + category.getName() + " already exists");
-        } else {
-            return categoryRepository.save(categoryObject);
-        }
+        return categoryService.createCategory(categoryObject);
     }
 
-
     @PutMapping("/categories/{categoryId}")
-    public Category updateCategory(@PathVariable(value = "categoryId") Long categoryId, @RequestBody Category categoryObject) {
+    public Category updateCategory(@PathVariable(
+            value = "categoryId") Long categoryId, @RequestBody Category categoryObject) {
         System.out.println("calling updateCategory ==>");
-        Optional<Category> category = categoryRepository.findById(categoryId);
-        if (category.isPresent()) {
-            if (categoryObject.getName().equals(category.get().getName())) {
-                System.out.println("Same");
-                throw new InformationExistException("category " + category.get().getName() + " is already exists");
-            } else {
-                Category updateCategory = categoryRepository.findById(categoryId).get();
-                updateCategory.setName(categoryObject.getName());
-                updateCategory.setDescription(categoryObject.getDescription());
-                return categoryRepository.save(updateCategory);
-            }
-        } else {
-            throw new InformationNotFoundException("category with id " + categoryId + " not found");
-        }
+        return categoryService.updateCategory(categoryId, categoryObject);
     }
 
     @DeleteMapping("/categories/{categoryId}")
     public Optional<Category> deleteCategory(@PathVariable(value = "categoryId") Long categoryId) {
         System.out.println("calling deleteCategory ==>");
-        Optional<Category> category = categoryRepository.findById(categoryId);
+        return categoryService.deleteCategory(categoryId);
+    }
 
-        if (category.isPresent()) {
-            categoryRepository.deleteById(categoryId);
-            return category;
-        } else {
-            throw new InformationNotFoundException("category with id " + categoryId + " not found");
-        }
+    @PostMapping("/categories/{categoryId}/recipes")
+    public Recipe createCategoryRecipe(
+            @PathVariable(value = "categoryId") Long categoryId, @RequestBody Recipe recipeObject) {
+        System.out.println("calling createCategoryRecipe ==>");
+        return categoryService.createCategoryRecipe(categoryId, recipeObject);
+    }
+
+    @GetMapping("/categories/{categoryId}/recipes")
+    public List<Recipe> getCategoryRecipes(@PathVariable(value = "categoryId") Long categoryId) {
+        System.out.println("calling getCategoryRecipes ==>");
+        return categoryService.getCategoryRecipes(categoryId);
+    }
+
+    @GetMapping("/categories/{categoryId}/recipes/{recipeId}")
+    public Recipe getCategoryRecipe(
+            @PathVariable(value = "categoryId") Long categoryId, @PathVariable(value = "recipeId") Long recipeId) {
+        System.out.println("calling getCategoryRecipe ==>");
+        return categoryService.getCategoryRecipe(categoryId, recipeId);
+    }
+
+    @PutMapping("/categories/{categoryId}/recipes/{recipeId}")
+    public Recipe updateCategoryRecipe(@PathVariable(value = "categoryId") Long categoryId,
+                                       @PathVariable(value = "recipeId") Long recipeId,
+                                       @RequestBody Recipe recipeObject) {
+        System.out.println("calling getCategoryRecipe ==>");
+        return categoryService.updateCategoryRecipe(categoryId, recipeId, recipeObject);
+    }
+
+    @DeleteMapping("/categories/{categoryId}/recipes/{recipeId}")
+    public ResponseEntity<HashMap> deleteCategoryRecipe(
+            @PathVariable(value = "categoryId") Long categoryId, @PathVariable(value = "recipeId") Long recipeId) {
+        System.out.println("calling getCategoryRecipe ==>");
+        categoryService.deleteCategoryRecipe(categoryId, recipeId);
+        HashMap responseMessage = new HashMap();
+        responseMessage.put("status", "recipe with id: " + recipeId + " was successfully deleted.");
+        return new ResponseEntity<HashMap>(responseMessage, HttpStatus.OK);
     }
 }
